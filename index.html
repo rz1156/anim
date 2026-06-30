@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime CyberFace - Real-time MediaPipe Face Mesh</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <div class="bg-container">
+        <div class="stars"></div>
+        <div class="twilight-glow"></div>
+        <div class="nebula-cloud"></div>
+    </div>
+
+    <div class="app-container">
+        <header>
+            <h1>ANIME <span class="neon-text">CYBERFACE</span></h1>
+            <p>Next-Gen Real-time Face Tracking System</p>
+        </header>
+
+        <main class="visualizer-area">
+            <div class="viewport-wrapper" id="viewportWrapper">
+                <video id="webcam" autoplay playsinline muted></video>
+                <canvas id="overlayCanvas"></canvas>
+                
+                <div id="htmlOverlayContainer"></div>
+                
+                <div class="loading-overlay" id="loadingIndicator">
+                    <div class="spinner"></div>
+                    <p>Initializing AI Model...</p>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <button id="btnCamera" class="btn-primary">AKTIFKAN KAMERA</button>
+                <div class="status-box">
+                    <div>FPS: <span id="fpsVal" class="neon-green">0</span></div>
+                    <div>Active Mode: <span id="modeVal" class="neon-pink">None</span></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
