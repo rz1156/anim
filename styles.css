@@ -1,0 +1,236 @@
+:root {
+    --primary: #ff2a74;
+    --secondary: #00f0ff;
+    --bg-dark: #0a0a16;
+    --panel-bg: rgba(15, 15, 35, 0.65);
+    --neon-shadow: 0 0 15px rgba(255, 42, 116, 0.6);
+    --cyber-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-dark);
+    color: #fff;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* Background Cyber Space */
+.bg-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -2;
+    overflow: hidden;
+    background: linear-gradient(145deg, #070714 0%, #120a2a 100%);
+}
+
+.twilight-glow {
+    position: absolute;
+    bottom: -10%;
+    right: -10%;
+    width: 60vw;
+    height: 60vw;
+    background: radial-gradient(circle, rgba(255, 42, 116, 0.15) 0%, transparent 70%);
+    filter: blur(50px);
+}
+
+.nebula-cloud {
+    position: absolute;
+    top: -10%;
+    left: -10%;
+    width: 50vw;
+    height: 50vw;
+    background: radial-gradient(circle, rgba(0, 240, 255, 0.12) 0%, transparent 70%);
+    filter: blur(60px);
+}
+
+/* App Core Layout */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    min-height: 100vh;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    letter-spacing: 4px;
+    font-weight: 900;
+    text-shadow: 0 0 10px rgba(255,255,255,0.2);
+}
+
+.neon-text {
+    color: var(--primary);
+    text-shadow: var(--neon-shadow);
+}
+
+/* Glassmorphism Viewport Area */
+.visualizer-area {
+    width: 100%;
+    max-width: 800px;
+    background: var(--panel-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 1.5rem;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.viewport-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: #000;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 2px solid rgba(0, 240, 255, 0.2);
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+}
+
+/* Mirroring the Camera Feed */
+#webcam {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+#overlayCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+    transform: scaleX(-1); /* Sync with video mirroring */
+}
+
+#htmlOverlayContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+}
+
+/* Control Panel & Interactive Buttons */
+.control-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    gap: 1rem;
+}
+
+.btn-primary {
+    background: linear-gradient(90deg, var(--primary), #ff5e97);
+    color: white;
+    border: none;
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: var(--neon-shadow);
+    transition: all 0.3s ease;
+    letter-spacing: 1px;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 25px rgba(255, 42, 116, 0.9);
+}
+
+.status-box {
+    display: flex;
+    gap: 1.5rem;
+    font-family: monospace;
+    font-size: 1rem;
+    background: rgba(0,0,0,0.4);
+    padding: 0.6rem 1.2rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.neon-green { color: #00ff66; text-shadow: 0 0 8px rgba(0,255,102,0.5); }
+.neon-pink { color: var(--primary); text-shadow: var(--neon-shadow); }
+
+/* HTML-based Mode Elements */
+.shock-lines {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.05) 10px, rgba(255,255,255,0.05) 20px);
+    animation: jitter 0.1s infinite;
+}
+
+.anime-exclamation {
+    position: absolute;
+    color: #ffcc00;
+    font-size: 5rem;
+    font-weight: 900;
+    text-shadow: 0 0 20px rgba(255,204,0,0.8), 4px 4px 0 #000;
+    animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Loading Spinner */
+.loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-dark);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    gap: 1rem;
+    transition: opacity 0.5s ease;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(0, 240, 255, 0.1);
+    border-left-color: var(--secondary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Animation Timelines */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes jitter {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    100% { transform: translate(-1px, -1px) rotate(0.5deg); }
+}
+@keyframes popIn {
+    0% { transform: scale(0) translate(-50%, -50%); opacity: 0; }
+    100% { transform: scale(1) translate(-50%, -120%); opacity: 1; }
+}
+
+/* Responsive Implementation */
+@media (max-width: 768px) {
+    .app-container { padding: 1rem; }
+    header h1 { font-size: 1.8rem; }
+    .control-panel { flex-direction: column; align-items: stretch; }
+    .btn-primary { text-align: center; }
+    .status-box { justify-content: space-around; }
+}
