@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anime CyberFace & Hands - Dual AI Tracking</title>
+    <title>Anime Cyber AI - Blink Filter Engine</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -114,18 +114,13 @@
             box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
         }
 
-        /* Camera & Canvas Mirroring Synchronization */
         #webcam {
             position: absolute;
             width: 100%;
             height: 100%;
             object-fit: cover;
             transform: scaleX(-1);
-            visibility: hidden; /* Disembunyikan agar murni dirender lewat kanvas atau di bawah kanvas */
-        }
-        
-        #webcam.active {
-            visibility: visible;
+            display: none; /* Kamera dimanipulasi murni via kanvas agar filter real-time berjalan mulus */
         }
 
         #overlayCanvas {
@@ -137,6 +132,7 @@
             z-index: 2;
             pointer-events: none;
             transform: scaleX(-1);
+            transition: filter 0.4s ease-in-out; /* Smooth fade transition antar filter */
         }
 
         #htmlOverlayContainer {
@@ -145,8 +141,34 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 3;
+            z-index: 4;
             pointer-events: none;
+        }
+
+        /* Animated HUD Notification System */
+        .hud-notification {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: rgba(0, 5, 15, 0.85);
+            border: 2px solid var(--secondary);
+            padding: 0.6rem 2rem;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #fff;
+            letter-spacing: 2px;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 5;
+        }
+
+        .hud-notification.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
         }
 
         /* Interactive Elements & HUD */
@@ -179,9 +201,9 @@
 
         .status-box {
             display: flex;
-            gap: 1.5rem;
+            gap: 1rem;
             font-family: monospace;
-            font-size: 1rem;
+            font-size: 0.9rem;
             background: rgba(0,0,0,0.4);
             padding: 0.6rem 1.2rem;
             border-radius: 10px;
@@ -190,8 +212,8 @@
 
         .neon-green { color: #00ff66; text-shadow: 0 0 8px rgba(0,255,102,0.5); }
         .neon-pink { color: var(--primary); text-shadow: var(--neon-shadow); }
+        .neon-blue { color: var(--secondary); text-shadow: var(--cyber-shadow); }
 
-        /* Dynamic HTML Overlays */
         .shock-lines {
             position: absolute;
             inset: 0;
@@ -208,7 +230,6 @@
             animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
-        /* Engine Loading Screen */
         .loading-overlay {
             position: absolute;
             inset: 0;
@@ -240,14 +261,6 @@
             0% { transform: scale(0) translate(-50%, -50%); opacity: 0; }
             100% { transform: scale(1) translate(-50%, -120%); opacity: 1; }
         }
-
-        @media (max-width: 768px) {
-            .app-container { padding: 1rem; }
-            header h1 { font-size: 1.8rem; }
-            .control-panel { flex-direction: column; align-items: stretch; }
-            .btn-primary { text-align: center; }
-            .status-box { justify-content: space-around; }
-        }
     </style>
 </head>
 <body>
@@ -260,7 +273,7 @@
     <div class="app-container">
         <header>
             <h1>ANIME <span class="neon-text">CYBER AI</span></h1>
-            <p>Real-time Face Mesh & Hand Tracking Hub</p>
+            <p>Blink-Controlled Dual Tracking Interface</p>
         </header>
 
         <main class="visualizer-area">
@@ -268,10 +281,11 @@
                 <video id="webcam" autoplay playsinline muted></video>
                 <canvas id="overlayCanvas"></canvas>
                 <div id="htmlOverlayContainer"></div>
+                <div id="hudNotification" class="hud-notification">FILTER: NORMAL VISION</div>
                 
                 <div class="loading-overlay" id="loadingIndicator" style="display: none;">
                     <div class="spinner"></div>
-                    <p>Mempersiapkan Dual AI Engine...</p>
+                    <p>Mempersiapkan Core Tracking & Filter System...</p>
                 </div>
             </div>
 
@@ -279,7 +293,8 @@
                 <button id="btnCamera" class="btn-primary">AKTIFKAN KAMERA</button>
                 <div class="status-box">
                     <div>FPS: <span id="fpsVal" class="neon-green">0</span></div>
-                    <div>Active Mode: <span id="modeVal" class="neon-pink">None</span></div>
+                    <div>Mode: <span id="modeVal" class="neon-pink">None</span></div>
+                    <div>Filter: <span id="filterVal" class="neon-blue">Normal</span></div>
                 </div>
             </div>
         </main>
@@ -292,9 +307,11 @@
         const btnCamera = document.getElementById('btnCamera');
         const loadingIndicator = document.getElementById('loadingIndicator');
         const modeVal = document.getElementById('modeVal');
+        const filterVal = document.getElementById('filterVal');
         const fpsVal = document.getElementById('fpsVal');
         const viewportWrapper = document.getElementById('viewportWrapper');
         const htmlOverlayContainer = document.getElementById('htmlOverlayContainer');
+        const hudNotification = document.getElementById('hudNotification');
 
         let faceMesh, hands, camera;
         let particles = [];
@@ -303,13 +320,18 @@
         let frameCount = 0;
         let fps = 0;
 
-        // State metrics
-        let blinkCount = 0;
-        let lastBlinkTime = 0;
+        // State parameters & Cooldowns
         let eyesClosedStartTime = null;
-        let currentMode = "Standard";
+        let lastFilterSwitchTime = 0; 
+        const BLINK_DURATION_THRESHOLD = 100; // Minimal menutup mata 100ms
+        const COOLDOWN_DELAY = 1000;          // Anti-spam cooldown 1000ms
+        
+        // Filter Cycling System Configuration
+        const FILTERS = ["NORMAL VISION", "CYBER GREEN", "THERMAL VISION", "NIGHT VISION", "MATRIX MODE"];
+        let currentFilterIndex = 0;
 
-        // Hasil penyimpanan data tracking terpisah untuk sinkronisasi render tunggal
+        // Multi-frame operational objects
+        let currentMode = "Standard";
         let latestFaceResults = null;
         let latestHandResults = null;
 
@@ -347,9 +369,19 @@
             return Math.hypot(p1.x - p2.x, p1.y - p2.y, p1.z - p2.z);
         }
 
-        // --- PIPELINE HANDLER SINKRON (REQUEST ANIMATION FRAME RENDERING) ---
+        // --- HUD Notification Feedback Manager ---
+        function triggerHUDNotification(text) {
+            hudNotification.innerText = `FILTER: ${text}`;
+            hudNotification.classList.add('active');
+            
+            // Auto fade out after brief display
+            setTimeout(() => {
+                hudNotification.classList.remove('active');
+            }, 1500);
+        }
+
+        // --- Main Rendering Engine Core Loop ---
         function processAndRender() {
-            // Hitung FPS
             const now = performance.now();
             frameCount++;
             if (now - lastFrameTime >= 1000) {
@@ -357,16 +389,13 @@
                 fpsVal.innerText = fps;
             }
 
-            // Bersihkan kanvas utama
-            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            htmlOverlayContainer.innerHTML = '';
-            viewportWrapper.style.transform = 'scale(1)';
-            viewportWrapper.style.filter = 'none';
-
             const W = canvasElement.width;
             const H = canvasElement.height;
 
-            // Render Sakura Latar Belakang
+            // Step 1: Render Raw Camera Frame Ke Dalam Canvas Utama Berdasarkan Index Filter Aktif
+            applyBaseCameraFilters(W, H);
+
+            // Step 2: Render Global Background Elements (Sakura)
             emitGlobalSakura();
             sakuraParticles = sakuraParticles.filter(p => p.life > 0);
             sakuraParticles.forEach(p => {
@@ -381,8 +410,15 @@
                 canvasCtx.restore();
             });
 
+            // Reset UI States safely
+            htmlOverlayContainer.innerHTML = '';
+            viewportWrapper.style.transform = 'scale(1)';
+            
+            // Apply Dynamic CSS Filter Transitions directly on viewport level
+            applyCSSViewTransitions();
+
             // ==========================================
-            // 1. EVALUASI DATA WAJAH (FACE MESH EFFECT)
+            // FACE TRACKING INTERACTION DATA EVALUATOR
             // ==========================================
             if (latestFaceResults && latestFaceResults.multiFaceLandmarks && latestFaceResults.multiFaceLandmarks.length > 0) {
                 const landmarks = latestFaceResults.multiFaceLandmarks[0];
@@ -409,42 +445,44 @@
                 const averageEAR = (leftEAR + rightEAR) / 2;
                 const browHeight = (getDistance(landmarks[70], landmarks[159]) + getDistance(landmarks[300], landmarks[386])) / 2;
 
-                let detectedMode = "Standard";
-
-                if (averageEAR < 0.15) {
-                    if (!eyesClosedStartTime) eyesClosedStartTime = now;
-                    if (now - eyesClosedStartTime > 2000) detectedMode = "Sleep";
-                } else {
-                    if (eyesClosedStartTime && (now - eyesClosedStartTime < 300)) {
-                        if (now - lastBlinkTime < 600) {
-                            blinkCount++;
-                            if (blinkCount >= 2) { detectedMode = "Magical"; blinkCount = 0; }
-                        } else { blinkCount = 1; }
-                        lastBlinkTime = now;
+                // --- ALGORITMA MATEMATIS DETEKSI KEDIPAN (EAR DETECTOR) ---
+                if (averageEAR < 0.14) { // Kriteria mata tertutup penuh
+                    if (!eyesClosedStartTime) {
+                        eyesClosedStartTime = now;
                     }
-                    eyesClosedStartTime = null;
+                } else {
+                    if (eyesClosedStartTime) {
+                        const closedDuration = now - eyesClosedStartTime;
+                        // Evaluasi Validasi Durasi Real Blink & Cooldown Anti Spam Protection
+                        if (closedDuration >= BLINK_DURATION_THRESHOLD && (now - lastFilterSwitchTime > COOLDOWN_DELAY)) {
+                            // Cycle Filter Index Shift
+                            currentFilterIndex = (currentFilterIndex + 1) % FILTERS.length;
+                            lastFilterSwitchTime = now;
+                            
+                            filterVal.innerText = FILTERS[currentFilterIndex];
+                            triggerHUDNotification(FILTERS[currentFilterIndex]);
+                        }
+                        eyesClosedStartTime = null;
+                    }
                 }
 
-                if (detectedMode !== "Sleep" && detectedMode !== "Magical") {
-                    if (mouthOpenRatio > 0.6 && pitchRatio < 0.55) {
-                        detectedMode = "Power Up";
-                    } else if (browHeight > 0.22 && averageEAR > 0.35) {
-                        detectedMode = "Demon";
-                    } else if (mouthOpenRatio > 0.4) {
-                        detectedMode = "Surprise";
-                    } else if (pitchRatio > 0.62) {
-                        detectedMode = "Embarrassed";
-                    } else if (smileRatio > 1.15) {
-                        detectedMode = pitchRatio < 0.48 ? "Angel" : "Happy";
-                    } else if (smileRatio > 0.95) {
-                        detectedMode = "Neko";
-                    }
+                // Expression Mode Calculations
+                let detectedMode = "Standard";
+                if (averageEAR < 0.14) {
+                    detectedMode = "Sleep";
+                } else {
+                    if (mouthOpenRatio > 0.6 && pitchRatio < 0.55) detectedMode = "Power Up";
+                    else if (browHeight > 0.22 && averageEAR > 0.35) detectedMode = "Demon";
+                    else if (mouthOpenRatio > 0.4) detectedMode = "Surprise";
+                    else if (pitchRatio > 0.62) detectedMode = "Embarrassed";
+                    else if (smileRatio > 1.15) detectedMode = pitchRatio < 0.48 ? "Angel" : "Happy";
+                    else if (smileRatio > 0.95) detectedMode = "Neko";
                 }
 
                 currentMode = detectedMode;
                 modeVal.innerText = currentMode;
 
-                // Blush Effect
+                // Blush Rendering Layer
                 if (smileRatio > 0.85 || currentMode === "Embarrassed") {
                     let intensity = Math.min((smileRatio - 0.85) * 2.5, 0.8);
                     if (currentMode === "Embarrassed") intensity = 0.9;
@@ -461,7 +499,7 @@
                     canvasCtx.restore();
                 }
 
-                // Sparkle Cross Eyes
+                // Sparkle Eye Cross Layer
                 if (averageEAR > 0.18) {
                     [leftEye, rightEye].forEach(eye => {
                         canvasCtx.save();
@@ -479,29 +517,22 @@
                     });
                 }
 
-                // Complex Anime Custom Modes
+                // Transform-Relative Anime Overlays
                 canvasCtx.save();
                 canvasCtx.translate(centerPoint.x, centerPoint.y);
                 canvasCtx.rotate(rollAngle);
 
                 switch(currentMode) {
                     case "Happy":
-                        viewportWrapper.style.filter = "brightness(1.15) contrast(1.05)";
                         if(Math.random() < 0.2) {
                             particles.push(new Particle(0, 0, 'heart', '#ff4081', Math.random()*4+4, (Math.random()-0.5)*4, -Math.random()*4-2, 60));
                         }
                         break;
                     case "Surprise":
-                        viewportWrapper.style.transform = "scale(1.06)";
+                        viewportWrapper.style.transform = "scale(1.05)";
                         const lines = document.createElement('div');
                         lines.className = 'shock-lines';
                         htmlOverlayContainer.appendChild(lines);
-                        const exclam = document.createElement('div');
-                        exclam.className = 'anime-exclamation';
-                        exclam.innerText = '!!';
-                        exclam.style.left = `${centerPoint.x}px`;
-                        exclam.style.top = `${centerPoint.y}px`;
-                        htmlOverlayContainer.appendChild(exclam);
                         break;
                     case "Embarrassed":
                         canvasCtx.strokeStyle = 'rgba(0, 120, 255, 0.4)';
@@ -513,63 +544,23 @@
                             canvasCtx.stroke();
                         }
                         break;
-                    case "Sleep":
-                        viewportWrapper.style.filter = "brightness(0.65)";
-                        if (frameCount % 45 === 0) {
-                            const zText = document.createElement('div');
-                            zText.style.position = 'absolute';
-                            zText.style.color = '#76c7ff';
-                            zText.style.fontSize = '2rem';
-                            zText.style.fontWeight = 'bold';
-                            zText.style.left = `${centerPoint.x + (40 * scaleFactor)}px`;
-                            zText.style.top = `${centerPoint.y - (40 * scaleFactor)}px`;
-                            zText.style.animation = 'popIn 2.5s ease-out forwards';
-                            zText.innerText = 'Zzz...';
-                            htmlOverlayContainer.appendChild(zText);
-                        }
-                        break;
-                    case "Magical":
-                        canvasCtx.strokeStyle = 'rgba(0, 240, 255, 0.8)';
-                        canvasCtx.lineWidth = 4;
-                        canvasCtx.shadowBlur = 20;
-                        canvasCtx.shadowColor = '#00f0ff';
-                        canvasCtx.beginPath();
-                        canvasCtx.arc(0, 0, 90 * scaleFactor, 0, Math.PI*2);
-                        canvasCtx.stroke();
-                        canvasCtx.save();
-                        canvasCtx.rotate(-now * 0.002);
-                        canvasCtx.font = `${14 * scaleFactor}px monospace`;
-                        canvasCtx.fillStyle = '#00f0ff';
-                        canvasCtx.fillText("⚡ CYBER ⚡ MAGIC ⚡ SYSTEM", -70 * scaleFactor, 5 * scaleFactor);
-                        canvasCtx.restore();
-                        break;
                     case "Power Up":
                         canvasCtx.shadowBlur = 35;
                         canvasCtx.shadowColor = '#9d00ff';
-                        canvasCtx.fillStyle = 'rgba(157, 0, 255, 0.15)';
+                        canvasCtx.fillStyle = 'rgba(157, 0, 255, 0.12)';
                         canvasCtx.beginPath();
                         canvasCtx.arc(0, -20 * scaleFactor, 110 * scaleFactor, 0, Math.PI*2);
                         canvasCtx.fill();
-                        if(Math.random() < 0.7) {
-                            canvasCtx.strokeStyle = '#ffffff';
-                            canvasCtx.lineWidth = 2 * scaleFactor;
-                            canvasCtx.beginPath();
-                            canvasCtx.moveTo((Math.random()-0.5)*100, (Math.random()-0.5)*100);
-                            canvasCtx.lineTo((Math.random()-0.5)*150, (Math.random()-0.5)*150);
-                            canvasCtx.stroke();
-                        }
                         break;
                     case "Demon":
                         canvasCtx.fillStyle = '#ff003c';
                         canvasCtx.shadowColor = '#ff0000';
                         canvasCtx.shadowBlur = 15;
-                        // Left Horn
                         canvasCtx.beginPath();
                         canvasCtx.moveTo(-40 * scaleFactor, -60 * scaleFactor);
                         canvasCtx.quadraticCurveTo(-70 * scaleFactor, -120 * scaleFactor, -90 * scaleFactor, -110 * scaleFactor);
                         canvasCtx.quadraticCurveTo(-60 * scaleFactor, -80 * scaleFactor, -30 * scaleFactor, -55 * scaleFactor);
                         canvasCtx.fill();
-                        // Right Horn
                         canvasCtx.beginPath();
                         canvasCtx.moveTo(40 * scaleFactor, -60 * scaleFactor);
                         canvasCtx.quadraticCurveTo(70 * scaleFactor, -120 * scaleFactor, 90 * scaleFactor, -110 * scaleFactor);
@@ -580,7 +571,7 @@
                         canvasCtx.strokeStyle = 'rgba(255, 245, 200, 0.9)';
                         canvasCtx.shadowBlur = 25;
                         canvasCtx.shadowColor = '#fff5c8';
-                        canvasCtx.lineWidth = 7 * scaleFactor;
+                        canvasCtx.lineWidth = 6 * scaleFactor;
                         canvasCtx.save();
                         canvasCtx.scale(1, 0.28);
                         canvasCtx.beginPath();
@@ -592,45 +583,35 @@
                         canvasCtx.fillStyle = '#120a2a';
                         canvasCtx.strokeStyle = 'rgba(255, 42, 116, 0.7)';
                         canvasCtx.lineWidth = 3;
-                        // Left Ear
                         canvasCtx.beginPath();
                         canvasCtx.moveTo(-55 * scaleFactor, -50 * scaleFactor);
                         canvasCtx.lineTo(-85 * scaleFactor, -105 * scaleFactor);
                         canvasCtx.lineTo(-25 * scaleFactor, -75 * scaleFactor);
-                        canvasCtx.closePath();
-                        canvasCtx.fill(); canvasCtx.stroke();
-                        // Right Ear
+                        canvasCtx.closePath(); canvasCtx.fill(); canvasCtx.stroke();
                         canvasCtx.beginPath();
                         canvasCtx.moveTo(55 * scaleFactor, -50 * scaleFactor);
                         canvasCtx.lineTo(85 * scaleFactor, -105 * scaleFactor);
                         canvasCtx.lineTo(25 * scaleFactor, -75 * scaleFactor);
-                        canvasCtx.closePath();
-                        canvasCtx.fill(); canvasCtx.stroke();
+                        canvasCtx.closePath(); canvasCtx.fill(); canvasCtx.stroke();
                         break;
                 }
                 canvasCtx.restore();
             }
 
             // ==========================================
-            // 2. EVALUASI DATA TANGAN (HAND TRACKING EFFECT)
+            // HAND TRACKING INTERACTION LAYER
             // ==========================================
             if (latestHandResults && latestHandResults.multiHandLandmarks) {
                 latestHandResults.multiHandLandmarks.forEach((handLandmarks) => {
-                    // Gambar garis sirkuit neon futuristik antar sendi tangan
                     canvasCtx.save();
                     canvasCtx.lineWidth = 3;
-                    canvasCtx.strokeStyle = 'rgba(0, 240, 255, 0.6)';
+                    canvasCtx.strokeStyle = currentFilterIndex === 2 ? 'rgba(255,255,255,0.7)' : 'rgba(0, 240, 255, 0.6)';
                     canvasCtx.shadowBlur = 10;
                     canvasCtx.shadowColor = '#00f0ff';
 
-                    // Hubungkan sendi pergelangan (wrist) ke pangkal jari-jari
                     const connections = [
-                        [0, 1, 2, 3, 4],       // Ibu Jari
-                        [0, 5, 6, 7, 8],       // Telunjuk
-                        [5, 9, 13, 17],        // Telapak Atas
-                        [0, 17, 18, 19, 20],   // Kelingking
-                        [9, 10, 11, 12],       // Jari Tengah
-                        [13, 14, 15, 16]       // Jari Manis
+                        [0, 1, 2, 3, 4], [0, 5, 6, 7, 8], [5, 9, 13, 17],
+                        [0, 17, 18, 19, 20], [9, 10, 11, 12], [13, 14, 15, 16]
                     ];
 
                     connections.forEach(path => {
@@ -643,22 +624,18 @@
                         canvasCtx.stroke();
                     });
 
-                    // Efek Cahaya / Efek Sihir pada Setiap Ujung Jari (Landmark 4, 8, 12, 16, 20)
-                    const tips = [4, 8, 12, 16, 20];
-                    tips.forEach(index => {
+                    [4, 8, 12, 16, 20].forEach(index => {
                         const tip = handLandmarks[index];
                         canvasCtx.fillStyle = 'rgba(0, 255, 102, 0.8)';
-                        canvasCtx.shadowColor = '#00ff66';
-                        canvasCtx.shadowBlur = 12;
                         canvasCtx.beginPath();
-                        canvasCtx.arc(tip.x * W, tip.y * H, 6, 0, Math.PI * 2);
+                        canvasCtx.arc(tip.x * W, tip.y * H, 5, 0, Math.PI * 2);
                         canvasCtx.fill();
                     });
                     canvasCtx.restore();
                 });
             }
 
-            // Loop Partikel Independen (hati, bintang, dll)
+            // Process Active Secondary Particles Engine
             particles = particles.filter(p => p.life > 0);
             particles.forEach(p => {
                 p.update();
@@ -672,13 +649,99 @@
                 canvasCtx.restore();
             });
 
-            // Jalankan loop render secara kontinu di 60fps
             requestAnimationFrame(processAndRender);
         }
 
-        // --- SISTEM INISIALISASI CAMERA & AI TRACKERS ---
+        // --- MANIPULASI FILTER VIDEO PIXEL-LEVEL (HIGH PERFORMANCE) ---
+        function applyBaseCameraFilters(W, H) {
+            // Gambar frame mentah dari webcam
+            canvasCtx.drawImage(videoElement, 0, 0, W, H);
+
+            if (currentFilterIndex === 0) return; // Normal Vision
+
+            let imgData = canvasCtx.getImageData(0, 0, W, H);
+            let data = imgData.data;
+
+            // Algoritma manipulasi piksel per-prosesor level rendah (Dioptimalkan tanpa loop bersarang)
+            if (currentFilterIndex === 2) { 
+                // THERMAL VISION (Predator Style)
+                for (let i = 0; i < data.length; i += 4) {
+                    let r = data[i], g = data[i+1], b = data[i+2];
+                    let v = (r + g + b) / 3; // Grayscale base
+                    // Map Grayscale ke Spektrum Termal (Biru -> Hijau -> Kuning -> Merah -> Putih)
+                    data[i]   = v > 128 ? 255 : v * 2;              // Red Channel High
+                    data[i+1] = v > 64 && v < 192 ? 200 : (v > 192 ? v : 0); // Green Highlight
+                    data[i+2] = v < 128 ? 255 - (v * 2) : 0;        // Blue Channel Cold
+                }
+                canvasCtx.putImageData(imgData, 0, 0);
+            } 
+            else if (currentFilterIndex === 4) { 
+                // MATRIX MODE
+                for (let i = 0; i < data.length; i += 4) {
+                    let r = data[i], g = data[i+1], b = data[i+2];
+                    let lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                    data[i] = lum * 0.1;       // Tekan merah
+                    data[i+1] = lum * 1.4;     // Tingkatkan neon hijau
+                    data[i+2] = lum * 0.1;     // Tekan biru
+                }
+                canvasCtx.putImageData(imgData, 0, 0);
+
+                // Tambahkan Efek Distorsi Digital Matrix Ringan
+                if (Math.random() < 0.15) {
+                    let sliceY = Math.random() * H;
+                    let sliceH = Math.random() * 25 + 5;
+                    canvasCtx.drawImage(canvasElement, 0, sliceY, W, sliceH, (Math.random() - 0.5) * 12, sliceY, W, sliceH);
+                }
+            }
+        }
+
+        // --- CSS INTERFACE VIEW FILTERS TRANSITION (GPU ACCELERATED) ---
+        function applyCSSViewTransitions() {
+            switch(currentFilterIndex) {
+                case 1: // CYBER GREEN (Holographic Feeling & HUD Scanlines)
+                    canvasElement.style.filter = "contrast(1.2) brightness(0.9) hue-rotate(40deg) sepia(0.6) saturate(1.8)";
+                    
+                    // Render HUD Overlay Tipe Iron-man secara Real-time
+                    canvasCtx.save();
+                    canvasCtx.strokeStyle = 'rgba(0, 255, 102, 0.25)';
+                    canvasCtx.lineWidth = 1;
+                    for (let y = 0; y < canvasElement.height; y += 4) { // Scanlines
+                        canvasCtx.beginPath(); canvasCtx.moveTo(0, y); canvasCtx.lineTo(canvasElement.width, y); canvasCtx.stroke();
+                    }
+                    // HUD Lingkaran Target Tengah
+                    canvasCtx.strokeStyle = 'rgba(0, 255, 102, 0.4)';
+                    canvasCtx.beginPath(); canvasCtx.arc(canvasElement.width/2, canvasElement.height/2, 60, 0, Math.PI*2); canvasCtx.stroke();
+                    canvasCtx.restore();
+                    break;
+                    
+                case 2: // THERMAL VISION
+                    canvasElement.style.filter = "contrast(1.6) saturate(2.5)";
+                    break;
+                    
+                case 3: // NIGHT VISION (Military Green Monochrome Goggles)
+                    canvasElement.style.filter = "brightness(1.6) contrast(1.1) sepia(1) hue-rotate(85deg) saturate(1.5)";
+                    
+                    // Noise Grain & Vignette Efek
+                    canvasCtx.save();
+                    canvasCtx.fillStyle = "rgba(0, 255, 0, 0.05)";
+                    for (let k = 0; k < 12; k++) {
+                        canvasCtx.fillRect(Math.random() * canvasElement.width, Math.random() * canvasElement.height, 3, 3);
+                    }
+                    canvasCtx.restore();
+                    break;
+                    
+                case 4: // MATRIX MODE
+                    canvasElement.style.filter = "contrast(1.5) brightness(0.85)";
+                    break;
+                    
+                default: // NORMAL VISION
+                    canvasElement.style.filter = "none";
+                    break;
+            }
+        }
+
+        // --- ENGINE CONTROLLER ---
         function initAIModel() {
-            // 1. Setup Face Mesh
             faceMesh = new FaceMesh({
                 locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
             });
@@ -690,7 +753,6 @@
             });
             faceMesh.onResults((res) => { latestFaceResults = res; });
 
-            // 2. Setup Hands Tracker
             hands = new Hands({
                 locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
             });
@@ -705,7 +767,6 @@
             loadingIndicator.style.opacity = '0';
             setTimeout(() => {
                 loadingIndicator.style.display = 'none';
-                videoElement.classList.add('active');
             }, 500);
         }
 
@@ -719,7 +780,6 @@
                 
                 camera = new Camera(videoElement, {
                     onFrame: async () => {
-                        // Mengirimkan frame kamera secara paralel ke sistem Deteksi Wajah dan Tangan
                         await Promise.all([
                             faceMesh.send({ image: videoElement }),
                             hands.send({ image: videoElement })
@@ -733,7 +793,6 @@
                 btnCamera.style.display = 'none';
                 resizeCanvas();
                 
-                // Nyalakan Rendering Engine berbasis RequestAnimationFrame
                 requestAnimationFrame(processAndRender);
             } catch (err) {
                 alert("Gagal mengakses hardware kamera: " + err.message);
