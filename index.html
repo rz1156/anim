@@ -4,15 +4,251 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anime CyberFace - Real-time MediaPipe Face Mesh</title>
-    <link rel="stylesheet" href="style.css">
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --primary: #ff2a74;
+            --secondary: #00f0ff;
+            --bg-dark: #0a0a16;
+            --panel-bg: rgba(15, 15, 35, 0.65);
+            --neon-shadow: 0 0 15px rgba(255, 42, 116, 0.6);
+            --cyber-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: #fff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Ambient Cyber Anime Background */
+        .bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            overflow: hidden;
+            background: linear-gradient(145deg, #070714 0%, #120a2a 100%);
+        }
+
+        .twilight-glow {
+            position: absolute;
+            bottom: -10%;
+            right: -10%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(255, 42, 116, 0.15) 0%, transparent 70%);
+            filter: blur(50px);
+        }
+
+        .nebula-cloud {
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(0, 240, 255, 0.12) 0%, transparent 70%);
+            filter: blur(60px);
+        }
+
+        /* Core Glassmorphism Interface */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            letter-spacing: 4px;
+            font-weight: 900;
+            text-shadow: 0 0 10px rgba(255,255,255,0.2);
+        }
+
+        .neon-text {
+            color: var(--primary);
+            text-shadow: var(--neon-shadow);
+        }
+
+        .visualizer-area {
+            width: 100%;
+            max-width: 800px;
+            background: var(--panel-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .viewport-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid rgba(0, 240, 255, 0.2);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* Camera & Canvas Mirroring Synchronization */
+        #webcam {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        #overlayCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            transform: scaleX(-1);
+        }
+
+        #htmlOverlayContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        /* Interactive Elements & HUD */
+        .control-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+            gap: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary), #ff5e97);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: var(--neon-shadow);
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(255, 42, 116, 0.9);
+        }
+
+        .status-box {
+            display: flex;
+            gap: 1.5rem;
+            font-family: monospace;
+            font-size: 1rem;
+            background: rgba(0,0,0,0.4);
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .neon-green { color: #00ff66; text-shadow: 0 0 8px rgba(0,255,102,0.5); }
+        .neon-pink { color: var(--primary); text-shadow: var(--neon-shadow); }
+
+        /* Dynamic HTML Overlays */
+        .shock-lines {
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.05) 10px, rgba(255,255,255,0.05) 20px);
+            animation: jitter 0.1s infinite;
+        }
+
+        .anime-exclamation {
+            position: absolute;
+            color: #ffcc00;
+            font-size: 5rem;
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(255,204,0,0.8), 4px 4px 0 #000;
+            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Engine Loading Screen */
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            gap: 1rem;
+            transition: opacity 0.5s ease;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 240, 255, 0.1);
+            border-left-color: var(--secondary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* GPU Accelerated Micro-animations */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes jitter {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            100% { transform: translate(-1px, -1px) rotate(0.5deg); }
+        }
+        @keyframes popIn {
+            0% { transform: scale(0) translate(-50%, -50%); opacity: 0; }
+            100% { transform: scale(1) translate(-50%, -120%); opacity: 1; }
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
+            .app-container { padding: 1rem; }
+            header h1 { font-size: 1.8rem; }
+            .control-panel { flex-direction: column; align-items: stretch; }
+            .btn-primary { text-align: center; }
+            .status-box { justify-content: space-around; }
+        }
+    </style>
 </head>
 <body>
 
     <div class="bg-container">
-        <div class="stars"></div>
         <div class="twilight-glow"></div>
         <div class="nebula-cloud"></div>
     </div>
@@ -27,10 +263,9 @@
             <div class="viewport-wrapper" id="viewportWrapper">
                 <video id="webcam" autoplay playsinline muted></video>
                 <canvas id="overlayCanvas"></canvas>
-                
                 <div id="htmlOverlayContainer"></div>
                 
-                <div class="loading-overlay" id="loadingIndicator">
+                <div class="loading-overlay" id="loadingIndicator" style="display: none;">
                     <div class="spinner"></div>
                     <p>Initializing AI Model...</p>
                 </div>
@@ -46,6 +281,414 @@
         </main>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+        const videoElement = document.getElementById('webcam');
+        const canvasElement = document.getElementById('overlayCanvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const btnCamera = document.getElementById('btnCamera');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const modeVal = document.getElementById('modeVal');
+        const fpsVal = document.getElementById('fpsVal');
+        const viewportWrapper = document.getElementById('viewportWrapper');
+        const htmlOverlayContainer = document.getElementById('htmlOverlayContainer');
+
+        let faceMesh;
+        let camera;
+        let particles = [];
+        let sakuraParticles = [];
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
+        let fps = 0;
+
+        // Double blink and multi-frame condition metrics
+        let blinkCount = 0;
+        let lastBlinkTime = 0;
+        let eyesClosedStartTime = null;
+        let currentMode = "Standard";
+
+        function resizeCanvas() {
+            canvasElement.width = viewportWrapper.clientWidth;
+            canvasElement.height = viewportWrapper.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // Core Particle Engine Data Blueprint
+        class Particle {
+            constructor(x, y, type, color, size, vx, vy, life) {
+                this.x = x; this.y = y; this.type = type; this.color = color;
+                this.size = size; this.vx = vx; this.vy = vy;
+                this.maxLife = life; this.life = life;
+                this.angle = Math.random() * Math.PI * 2;
+                this.rotSpeed = (Math.random() - 0.5) * 0.1;
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy; this.life--; this.angle += this.rotSpeed;
+                if(this.type === 'sakura') { this.x += Math.sin(this.life * 0.02) * 0.5; }
+            }
+        }
+
+        // Global falling sakura background generator
+        function emitGlobalSakura() {
+            if (sakuraParticles.length < 40) {
+                sakuraParticles.push(new Particle(
+                    Math.random() * canvasElement.width, -10, 'sakura',
+                    'rgba(255, 183, 197, 0.75)', Math.random() * 6 + 4,
+                    (Math.random() - 0.2) * 1.5, Math.random() * 1 + 1, 300
+                ));
+            }
+        }
+
+        function getDistance(p1, p2) {
+            return Math.hypot(p1.x - p2.x, p1.y - p2.y, p1.z - p2.z);
+        }
+
+        // MediaPipe Callback Pipeline Loop
+        function onFaceResults(results) {
+            const now = performance.now();
+            frameCount++;
+            if (now - lastFrameTime >= 1000) {
+                fps = frameCount; frameCount = 0; lastFrameTime = now;
+                fpsVal.innerText = fps;
+            }
+
+            // Clear framework for new cycle animation
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            htmlOverlayContainer.innerHTML = '';
+            viewportWrapper.style.transform = 'scale(1)';
+            viewportWrapper.style.filter = 'none';
+
+            // Background environmental particle execution
+            emitGlobalSakura();
+            sakuraParticles = sakuraParticles.filter(p => p.life > 0);
+            sakuraParticles.forEach(p => {
+                p.update();
+                canvasCtx.save();
+                canvasCtx.translate(p.x, p.y);
+                canvasCtx.rotate(p.angle);
+                canvasCtx.fillStyle = p.color;
+                canvasCtx.beginPath();
+                canvasCtx.ellipse(0, 0, p.size, p.size / 2, 0, 0, Math.PI * 2);
+                canvasCtx.fill();
+                canvasCtx.restore();
+            });
+
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+                currentMode = "Standard";
+                modeVal.innerText = currentMode;
+                return;
+            }
+
+            const landmarks = results.multiFaceLandmarks[0];
+            const W = canvasElement.width;
+            const H = canvasElement.height;
+
+            const leftEye = landmarks[33], rightEye = landmarks[263];
+            const noseTip = landmarks[4], chin = landmarks[152], forehead = landmarks[10];
+
+            // Transform vectors computation
+            const faceWidth = getDistance(leftEye, rightEye) * W;
+            const scaleFactor = faceWidth / 110; 
+            const centerPoint = { x: noseTip.x * W, y: noseTip.y * H };
+            const rollAngle = Math.atan2((rightEye.y - leftEye.y) * H, (rightEye.x - leftEye.x) * W);
+            
+            const totalFaceHeight = getDistance(forehead, chin);
+            const noseToChin = getDistance(noseTip, chin);
+            const pitchRatio = noseToChin / totalFaceHeight; 
+
+            // Feature expression ratio mappings
+            const lipTop = landmarks[13], lipBottom = landmarks[14];
+            const mouthLeft = landmarks[61], mouthRight = landmarks[291];
+            const mouthOpenRatio = getDistance(lipTop, lipBottom) / getDistance(mouthLeft, mouthRight);
+            const smileRatio = getDistance(mouthLeft, mouthRight) / (getDistance(landmarks[50], landmarks[280]));
+
+            const leftEAR = getDistance(landmarks[159], landmarks[145]) / getDistance(landmarks[33], landmarks[133]);
+            const rightEAR = getDistance(landmarks[386], landmarks[374]) / getDistance(landmarks[263], landmarks[362]);
+            const averageEAR = (leftEAR + rightEAR) / 2;
+            const browHeight = (getDistance(landmarks[70], landmarks[159]) + getDistance(landmarks[300], landmarks[386])) / 2;
+
+            let detectedMode = "Standard";
+
+            // Evaluator state rules cascade
+            if (averageEAR < 0.15) {
+                if (!eyesClosedStartTime) eyesClosedStartTime = now;
+                if (now - eyesClosedStartTime > 2000) detectedMode = "Sleep";
+            } else {
+                if (eyesClosedStartTime && (now - eyesClosedStartTime < 300)) {
+                    if (now - lastBlinkTime < 600) {
+                        blinkCount++;
+                        if (blinkCount >= 2) { detectedMode = "Magical"; blinkCount = 0; }
+                    } else { blinkCount = 1; }
+                    lastBlinkTime = now;
+                }
+                eyesClosedStartTime = null;
+            }
+
+            if (detectedMode !== "Sleep" && detectedMode !== "Magical") {
+                if (mouthOpenRatio > 0.6 && pitchRatio < 0.55) {
+                    detectedMode = "Power Up";
+                } else if (browHeight > 0.22 && averageEAR > 0.35) {
+                    detectedMode = "Demon";
+                } else if (mouthOpenRatio > 0.4) {
+                    detectedMode = "Surprise";
+                } else if (pitchRatio > 0.62) {
+                    detectedMode = "Embarrassed";
+                } else if (smileRatio > 1.15) {
+                    detectedMode = pitchRatio < 0.48 ? "Angel" : "Happy";
+                } else if (smileRatio > 0.95) {
+                    detectedMode = "Neko";
+                }
+            }
+
+            currentMode = detectedMode;
+            modeVal.innerText = currentMode;
+
+            // Render Layer: Blush Engine
+            if (smileRatio > 0.85 || currentMode === "Embarrassed") {
+                let intensity = Math.min((smileRatio - 0.85) * 2.5, 0.8);
+                if (currentMode === "Embarrassed") intensity = 0.9;
+
+                canvasCtx.save();
+                canvasCtx.translate(centerPoint.x, centerPoint.y);
+                canvasCtx.rotate(rollAngle);
+                canvasCtx.shadowBlur = 20 * scaleFactor;
+                canvasCtx.shadowColor = `rgba(255, 60, 140, ${intensity})`;
+                canvasCtx.fillStyle = `rgba(255, 105, 180, ${intensity * 0.5})`;
+                canvasCtx.beginPath();
+                canvasCtx.arc(-35 * scaleFactor, 20 * scaleFactor, 18 * scaleFactor, 0, Math.PI * 2);
+                canvasCtx.arc(35 * scaleFactor, 20 * scaleFactor, 18 * scaleFactor, 0, Math.PI * 2);
+                canvasCtx.fill();
+                canvasCtx.restore();
+            }
+
+            // Render Layer: Sparkle Anime Cross Eyes
+            if (averageEAR > 0.18) {
+                [leftEye, rightEye].forEach(eye => {
+                    canvasCtx.save();
+                    canvasCtx.translate(eye.x * W, eye.y * H);
+                    canvasCtx.rotate(rollAngle + (now * 0.003));
+                    canvasCtx.shadowBlur = 15;
+                    canvasCtx.shadowColor = "#00f0ff";
+                    canvasCtx.fillStyle = "#ffffff";
+                    for (let i = 0; i < 2; i++) {
+                        canvasCtx.rotate(Math.PI / 4 * i);
+                        canvasCtx.fillRect(-10 * scaleFactor, -2 * scaleFactor, 20 * scaleFactor, 4 * scaleFactor);
+                        canvasCtx.fillRect(-2 * scaleFactor, -10 * scaleFactor, 4 * scaleFactor, 20 * scaleFactor);
+                    }
+                    canvasCtx.restore();
+                });
+            }
+
+            // Matrix context injection for localized overlays
+            canvasCtx.save();
+            canvasCtx.translate(centerPoint.x, centerPoint.y);
+            canvasCtx.rotate(rollAngle);
+
+            switch(currentMode) {
+                case "Happy":
+                    viewportWrapper.style.filter = "brightness(1.15) contrast(1.05)";
+                    if(Math.random() < 0.2) {
+                        particles.push(new Particle(0, 0, 'heart', '#ff4081', Math.random()*4+4, (Math.random()-0.5)*4, -Math.random()*4-2, 60));
+                    }
+                    break;
+
+                case "Surprise":
+                    viewportWrapper.style.transform = "scale(1.06)";
+                    const lines = document.createElement('div');
+                    lines.className = 'shock-lines';
+                    htmlOverlayContainer.appendChild(lines);
+
+                    const exclam = document.createElement('div');
+                    exclam.className = 'anime-exclamation';
+                    exclam.innerText = '!!';
+                    exclam.style.left = `${centerPoint.x}px`;
+                    exclam.style.top = `${centerPoint.y}px`;
+                    htmlOverlayContainer.appendChild(exclam);
+                    break;
+
+                case "Embarrassed":
+                    canvasCtx.strokeStyle = 'rgba(0, 120, 255, 0.4)';
+                    canvasCtx.lineWidth = 3 * scaleFactor;
+                    for(let i=-3; i<=3; i++) {
+                        canvasCtx.beginPath();
+                        canvasCtx.moveTo(i * 15 * scaleFactor, -50 * scaleFactor);
+                        canvasCtx.lineTo(i * 15 * scaleFactor, -20 * scaleFactor);
+                        canvasCtx.stroke();
+                    }
+                    break;
+
+                case "Sleep":
+                    viewportWrapper.style.filter = "brightness(0.65)";
+                    if (frameCount % 45 === 0) {
+                        const zText = document.createElement('div');
+                        zText.style.position = 'absolute';
+                        zText.style.color = '#76c7ff';
+                        zText.style.fontSize = '2rem';
+                        zText.style.fontWeight = 'bold';
+                        zText.style.left = `${centerPoint.x + (40 * scaleFactor)}px`;
+                        zText.style.top = `${centerPoint.y - (40 * scaleFactor)}px`;
+                        zText.style.animation = 'popIn 2.5s ease-out forwards';
+                        zText.innerText = 'Zzz...';
+                        htmlOverlayContainer.appendChild(zText);
+                    }
+                    break;
+
+                case "Magical":
+                    canvasCtx.strokeStyle = 'rgba(0, 240, 255, 0.8)';
+                    canvasCtx.lineWidth = 4;
+                    canvasCtx.shadowBlur = 20;
+                    canvasCtx.shadowColor = '#00f0ff';
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(0, 0, 90 * scaleFactor, 0, Math.PI*2);
+                    canvasCtx.stroke();
+                    
+                    canvasCtx.save();
+                    canvasCtx.rotate(-now * 0.002);
+                    canvasCtx.font = `${14 * scaleFactor}px monospace`;
+                    canvasCtx.fillStyle = '#00f0ff';
+                    canvasCtx.fillText("⚡ CYBER ⚡ MAGIC ⚡ SYSTEM", -70 * scaleFactor, 5 * scaleFactor);
+                    canvasCtx.restore();
+                    break;
+
+                case "Power Up":
+                    canvasCtx.shadowBlur = 35;
+                    canvasCtx.shadowColor = '#9d00ff';
+                    canvasCtx.fillStyle = 'rgba(157, 0, 255, 0.15)';
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(0, -20 * scaleFactor, 110 * scaleFactor, 0, Math.PI*2);
+                    canvasCtx.fill();
+                    
+                    if(Math.random() < 0.7) {
+                        canvasCtx.strokeStyle = '#ffffff';
+                        canvasCtx.lineWidth = 2 * scaleFactor;
+                        canvasCtx.beginPath();
+                        canvasCtx.moveTo((Math.random()-0.5)*100, (Math.random()-0.5)*100);
+                        canvasCtx.lineTo((Math.random()-0.5)*150, (Math.random()-0.5)*150);
+                        canvasCtx.stroke();
+                    }
+                    break;
+
+                case "Demon":
+                    canvasCtx.fillStyle = '#ff003c';
+                    canvasCtx.shadowColor = '#ff0000';
+                    canvasCtx.shadowBlur = 15;
+                    
+                    // Left Horn
+                    canvasCtx.beginPath();
+                    canvasCtx.moveTo(-40 * scaleFactor, -60 * scaleFactor);
+                    canvasCtx.quadraticCurveTo(-70 * scaleFactor, -120 * scaleFactor, -90 * scaleFactor, -110 * scaleFactor);
+                    canvasCtx.quadraticCurveTo(-60 * scaleFactor, -80 * scaleFactor, -30 * scaleFactor, -55 * scaleFactor);
+                    canvasCtx.fill();
+
+                    // Right Horn
+                    canvasCtx.beginPath();
+                    canvasCtx.moveTo(40 * scaleFactor, -60 * scaleFactor);
+                    canvasCtx.quadraticCurveTo(70 * scaleFactor, -120 * scaleFactor, 90 * scaleFactor, -110 * scaleFactor);
+                    canvasCtx.quadraticCurveTo(60 * scaleFactor, -80 * scaleFactor, 30 * scaleFactor, -55 * scaleFactor);
+                    canvasCtx.fill();
+                    break;
+
+                case "Angel":
+                    canvasCtx.strokeStyle = 'rgba(255, 245, 200, 0.9)';
+                    canvasCtx.shadowBlur = 25;
+                    canvasCtx.shadowColor = '#fff5c8';
+                    canvasCtx.lineWidth = 7 * scaleFactor;
+                    canvasCtx.save();
+                    canvasCtx.scale(1, 0.28);
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(0, -320 * scaleFactor, 75 * scaleFactor, 0, Math.PI*2);
+                    canvasCtx.stroke();
+                    canvasCtx.restore();
+                    break;
+
+                case "Neko":
+                    canvasCtx.fillStyle = '#120a2a';
+                    canvasCtx.strokeStyle = 'rgba(255, 42, 116, 0.7)';
+                    canvasCtx.lineWidth = 3;
+
+                    // Left Ear
+                    canvasCtx.beginPath();
+                    canvasCtx.moveTo(-55 * scaleFactor, -50 * scaleFactor);
+                    canvasCtx.lineTo(-85 * scaleFactor, -105 * scaleFactor);
+                    canvasCtx.lineTo(-25 * scaleFactor, -75 * scaleFactor);
+                    canvasCtx.closePath();
+                    canvasCtx.fill(); canvasCtx.stroke();
+
+                    // Right Ear
+                    canvasCtx.beginPath();
+                    canvasCtx.moveTo(55 * scaleFactor, -50 * scaleFactor);
+                    canvasCtx.lineTo(85 * scaleFactor, -105 * scaleFactor);
+                    canvasCtx.lineTo(25 * scaleFactor, -75 * scaleFactor);
+                    canvasCtx.closePath();
+                    canvasCtx.fill(); canvasCtx.stroke();
+                    break;
+            }
+
+            canvasCtx.restore();
+
+            // Localized Dynamic Particle Buffer Loop
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.update();
+                canvasCtx.save();
+                canvasCtx.fillStyle = p.color;
+                if(p.type === 'heart') {
+                    canvasCtx.font = `${p.size * 2}px serif`;
+                    canvasCtx.fillText('❤', p.x + centerPoint.x, p.y + centerPoint.y);
+                }
+                canvasCtx.restore();
+            });
+        }
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480, facingMode: "user" },
+                    audio: false
+                });
+                videoElement.srcObject = stream;
+                
+                camera = new Camera(videoElement, {
+                    onFrame: async () => {
+                        await faceMesh.send({ image: videoElement });
+                    },
+                    width: 640,
+                    height: 480
+                });
+                
+                camera.start();
+                btnCamera.style.display = 'none';
+                resizeCanvas();
+            } catch (err) {
+                alert("Gagal mengakses hardware kamera: " + err.message);
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        btnCamera.addEventListener('click', () => {
+            loadingIndicator.style.display = 'flex';
+            
+            // Initialization steps
+            faceMesh = new FaceMesh({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+            });
+
+            faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,
+                minDetectionConfidence: 0.6,
+                minTrackingConfidence: 0.6
+            });
+
+            faceMesh.onResults(onFaceResults);
+            
+            // Fade loading system out safely
+            faceMesh.initialize().then(() => {
+                loadingIndicator.style.opacity = '0';
+                setTimeout(() => loadingIndicator.style.display = 'none', 500);
+            });
+
+            startCamera();
+        });
+    </script>
 </body>
 </html>
