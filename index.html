@@ -3,678 +3,973 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anime Cyber AI - Blink Filter Engine (Fixed)</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-
+    <title>CYBER AI VISION - MediaPipe Computer Vision Interface</title>
+    <!-- Import Google Fonts: Orbitron dan Rajdhani untuk nuansa fiksi ilmiah / futuristik -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* --- VARIABEL WARNA NEON & UTAMA --- */
         :root {
-            --primary: #ff2a74;
-            --secondary: #00f0ff;
-            --accent: #00ff66;
-            --bg-dark: #0a0a16;
-            --panel-bg: rgba(15, 15, 35, 0.65);
-            --neon-shadow: 0 0 15px rgba(255, 42, 116, 0.6);
-            --cyber-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+            --bg-dark: #030308;
+            --bg-grid: rgba(0, 240, 255, 0.04);
+            --neon-blue: #00f0ff;
+            --neon-purple: #bd00ff;
+            --neon-cyan: #00ffcc;
+            --neon-pink: #ff007f;
+            --glass-bg: rgba(6, 10, 26, 0.65);
+            --glass-border: rgba(0, 240, 255, 0.2);
+            --font-cyber: 'Orbitron', sans-serif;
+            --font-sub: 'Rajdhani', sans-serif;
         }
 
+        /* --- RESET & LAYOUT UTAMA --- */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            user-select: none;
         }
 
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-dark);
-            color: #fff;
-            overflow-x: hidden;
-            min-height: 100vh;
-        }
-
-        /* Ambient Cyber Anime Background */
-        .bg-container {
-            position: fixed;
-            top: 0;
-            left: 0;
+        body, html {
             width: 100vw;
             height: 100vh;
-            z-index: -2;
             overflow: hidden;
-            background: linear-gradient(145deg, #070714 0%, #120a2a 100%);
-        }
-
-        .twilight-glow {
-            position: absolute;
-            bottom: -10%;
-            right: -10%;
-            width: 60vw;
-            height: 60vw;
-            background: radial-gradient(circle, rgba(255, 42, 116, 0.15) 0%, transparent 70%);
-            filter: blur(50px);
-        }
-
-        .nebula-cloud {
-            position: absolute;
-            top: -10%;
-            left: -10%;
-            width: 50vw;
-            height: 50vw;
-            background: radial-gradient(circle, rgba(0, 240, 255, 0.12) 0%, transparent 70%);
-            filter: blur(60px);
-        }
-
-        /* Core Glassmorphism Interface */
-        .app-container {
+            background-color: var(--bg-dark);
+            font-family: var(--font-sub);
+            color: #ffffff;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            padding: 2rem;
-            min-height: 100vh;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-
-        header h1 {
-            font-size: 2.5rem;
-            letter-spacing: 4px;
-            font-weight: 900;
-            text-shadow: 0 0 10px rgba(255,255,255,0.2);
-        }
-
-        .neon-text {
-            color: var(--primary);
-            text-shadow: var(--neon-shadow);
-        }
-
-        .visualizer-area {
-            width: 100%;
-            max-width: 800px;
-            background: var(--panel-bg);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 1.5rem;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-
-        .viewport-wrapper {
             position: relative;
+        }
+
+        /* --- ANIMASI BACKGROUND GRADASI & GRID FUTURISTIK --- */
+        .bg-glow-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            aspect-ratio: 4 / 3;
-            background: #000;
-            border-radius: 16px;
+            height: 100%;
+            z-index: 1;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(189, 0, 255, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(6, 10, 26, 1) 0%, rgba(2, 3, 8, 1) 100%);
             overflow: hidden;
-            border: 2px solid rgba(0, 240, 255, 0.2);
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
         }
 
-        #webcam {
+        /* Grid Cybernetic Bergerak */
+        .bg-glow-layer::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background-image: 
+                linear-gradient(to right, var(--bg-grid) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--bg-grid) 1px, transparent 1px);
+            background-size: 40px 40px;
+            transform: perspective(500px) rotateX(60deg);
+            animation: gridMove 25s linear infinite;
+        }
+
+        /* Partikel Ambient */
+        .ambient-particles {
             position: absolute;
             width: 100%;
             height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-            display: none;
+            background-image: 
+                radial-gradient(circle at 30% 40%, rgba(0, 255, 204, 0.1) 1px, transparent 1px),
+                radial-gradient(circle at 70% 20%, rgba(189, 0, 255, 0.1) 2px, transparent 2px),
+                radial-gradient(circle at 50% 80%, rgba(0, 240, 255, 0.1) 1.5px, transparent 1.5px);
+            background-size: 150px 150px;
+            animation: particleFloat 15s ease-in-out infinite alternate;
         }
 
-        #overlayCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        /* --- CONTAINER UTAMA (INTERFACE) --- */
+        .main-interface {
+            position: relative;
             z-index: 2;
-            pointer-events: none;
-            transform: scaleX(-1);
-            transition: filter 0.3s ease-in-out;
-        }
-
-        #htmlOverlayContainer {
-            position: absolute;
-            top: 0;
-            left: 0;
             width: 100%;
             height: 100%;
-            z-index: 4;
-            pointer-events: none;
+            display: grid;
+            grid-template-rows: 80px 1fr 50px;
+            padding: 10px 20px;
+            gap: 15px;
         }
 
-        /* Animated HUD Notification System */
-        .hud-notification {
-            position: absolute;
-            top: 10%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.9);
-            background: rgba(0, 5, 15, 0.85);
-            border: 2px solid var(--secondary);
-            padding: 0.6rem 2rem;
-            border-radius: 8px;
-            font-family: 'Courier New', Courier, monospace;
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: #fff;
-            letter-spacing: 2px;
-            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
-            opacity: 0;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 5;
-        }
-
-        .hud-notification.active {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-        }
-
-        /* Interactive Elements & HUD */
-        .control-panel {
+        /* --- HEADER --- */
+        header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 1.5rem;
-            gap: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+            background: linear-gradient(180deg, rgba(0,240,255,0.05) 0%, transparent 100%);
+            padding: 10px 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
         }
 
-        .btn-primary {
-            background: linear-gradient(90deg, var(--primary), #ff5e97);
-            color: white;
-            border: none;
-            padding: 0.8rem 2rem;
-            font-size: 1rem;
-            font-weight: 700;
-            border-radius: 12px;
-            cursor: pointer;
-            box-shadow: var(--neon-shadow);
-            transition: all 0.3s ease;
-            letter-spacing: 1px;
+        .header-title-container h1 {
+            font-family: var(--font-cyber);
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px var(--neon-blue), 0 0 20px rgba(0,240,255,0.5);
+            animation: glitchText 4s infinite;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 25px rgba(255, 42, 116, 0.9);
-        }
-
-        .status-box {
-            display: flex;
-            gap: 1rem;
-            font-family: monospace;
+        .header-title-container p {
             font-size: 0.9rem;
-            background: rgba(0,0,0,0.4);
-            padding: 0.6rem 1.2rem;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.05);
+            color: var(--neon-cyan);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.9;
         }
 
-        .neon-green { color: #00ff66; text-shadow: 0 0 8px rgba(0,255,102,0.5); }
-        .neon-pink { color: var(--primary); text-shadow: var(--neon-shadow); }
-        .neon-blue { color: var(--secondary); text-shadow: var(--cyber-shadow); }
-
-        .shock-lines {
-            position: absolute;
-            inset: 0;
-            background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.05) 10px, rgba(255,255,255,0.05) 20px);
-            animation: jitter 0.1s infinite;
+        /* --- DASHBOARD CONTENT LAYOUT --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 20px;
+            height: 100%;
+            min-height: 0; /* Penting untuk flex/grid scroll */
         }
 
-        .loading-overlay {
-            position: absolute;
-            inset: 0;
-            background: var(--bg-dark);
+        /* AREA VIEWPORT KAMERA (KIRI) */
+        .viewport-section {
             display: flex;
             flex-direction: column;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        /* Container Kamera 16:9 */
+        .camera-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            max-height: calc(100vh - 240px);
+            background: rgba(2, 4, 12, 0.95);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.15), inset 0 0 40px rgba(0, 0, 0, 0.9);
+            overflow: hidden;
+            display: flex;
             justify-content: center;
             align-items: center;
+        }
+
+        /* Video Feed */
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Efek Cermin untuk Kamera Depan */
+            background-color: transparent;
+        }
+
+        /* Canvas Overlay */
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
             z-index: 10;
-            gap: 1rem;
+        }
+
+        /* Kamera Off Placeholder */
+        .camera-placeholder {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            z-index: 5;
+            color: rgba(0, 240, 255, 0.4);
+            font-family: var(--font-cyber);
+            text-align: center;
+        }
+
+        .camera-placeholder-icon {
+            width: 60px;
+            height: 60px;
+            border: 2px dashed rgba(0, 240, 255, 0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+
+        .camera-placeholder span {
+            font-size: 1rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            animation: blinkText 2s infinite;
+        }
+
+        /* --- EFEK-EFEK KAMERA FUTURISTIK --- */
+        /* Scan Line Bergerak */
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to bottom, transparent, var(--neon-blue), transparent);
+            opacity: 0.7;
+            z-index: 8;
+            pointer-events: none;
+            animation: scanMove 4s linear infinite;
+        }
+
+        /* Vignette & Noise Overlay */
+        .vignette-noise {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle, transparent 60%, rgba(2, 4, 12, 0.9) 100%),
+                repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.15) 0px, rgba(0, 0, 0, 0.15) 1px, transparent 1px, transparent 2px);
+            z-index: 9;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+        }
+
+        /* Flickering Ambient Screen Glow */
+        .ambient-flicker {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-shadow: inset 0 0 60px rgba(0, 240, 255, 0.05);
+            z-index: 7;
+            pointer-events: none;
+            animation: screenFlicker 0.15s infinite alternate;
+        }
+
+        /* --- CORNER HUD DECORATION (DEKORASI SUDUT) --- */
+        .corner-hud {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            border: 3px solid transparent;
+            z-index: 12;
+            pointer-events: none;
+            animation: hudPulse 2s infinite alternate;
+        }
+
+        .top-left {
+            top: 15px;
+            left: 15px;
+            border-top-color: var(--neon-blue);
+            border-left-color: var(--neon-blue);
+        }
+
+        .top-right {
+            top: 15px;
+            right: 15px;
+            border-top-color: var(--neon-blue);
+            border-right-color: var(--neon-blue);
+        }
+
+        .bottom-left {
+            bottom: 15px;
+            left: 15px;
+            border-bottom-color: var(--neon-blue);
+            border-left-color: var(--neon-blue);
+        }
+
+        .bottom-right {
+            bottom: 15px;
+            right: 15px;
+            border-bottom-color: var(--neon-blue);
+            border-right-color: var(--neon-blue);
+        }
+
+        /* --- TOMBOL FUTURISTIK --- */
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .btn-cyber {
+            flex: 1;
+            max-width: 200px;
+            padding: 12px 20px;
+            background: rgba(0, 240, 255, 0.05);
+            border: 1px solid var(--neon-blue);
+            border-radius: 6px;
+            color: #ffffff;
+            font-family: var(--font-cyber);
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+        }
+
+        /* Indikator Tombol Aktif & Hover */
+        .btn-cyber::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(0, 240, 255, 0.3),
+                transparent
+            );
+            transition: all 0.5s ease;
+        }
+
+        .btn-cyber:hover::before {
+            left: 100%;
+        }
+
+        .btn-cyber:hover {
+            background: rgba(0, 240, 255, 0.2);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+            transform: translateY(-2px);
+            text-shadow: 0 0 5px #fff;
+        }
+
+        .btn-cyber:active {
+            transform: translateY(1px);
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+        }
+
+        /* Style khusus untuk tombol non-aktif/reset dengan warna ungu/pink */
+        .btn-cyber.danger {
+            border-color: var(--neon-purple);
+            box-shadow: 0 0 10px rgba(189, 0, 255, 0.1);
+        }
+
+        .btn-cyber.danger:hover {
+            background: rgba(189, 0, 255, 0.2);
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 20px rgba(189, 0, 255, 0.4);
+        }
+
+        /* --- PANEL INFORMASI (KANAN) --- */
+        .right-panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(15px);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            overflow-y: auto;
+            max-height: calc(100vh - 160px);
+        }
+
+        /* Header Panel */
+        .panel-header {
+            border-bottom: 1px solid rgba(0, 240, 255, 0.3);
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h2 {
+            font-family: var(--font-cyber);
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            color: var(--neon-blue);
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+        }
+
+        /* Mini Radar di Pojok Kanan Atas Panel */
+        .radar-container {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 240, 255, 0.02);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.2);
+        }
+
+        /* Lingkaran Konsentris Radar */
+        .radar-circle {
+            position: absolute;
+            border: 1px dashed rgba(0, 240, 255, 0.2);
+            border-radius: 50%;
+        }
+        .radar-circle-1 { width: 45px; height: 45px; }
+        .radar-circle-2 { width: 25px; height: 25px; }
+
+        /* Garis Silang Radar */
+        .radar-crosshair-h, .radar-crosshair-v {
+            position: absolute;
+            background: rgba(0, 240, 255, 0.2);
+        }
+        .radar-crosshair-h { width: 100%; height: 1px; }
+        .radar-crosshair-v { width: 1px; height: 100%; }
+
+        /* Garis Sapuan Radar */
+        .radar-sweep {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(from 0deg, rgba(0, 255, 204, 0.4) 0deg, transparent 90deg, transparent 360deg);
+            border-radius: 50%;
+            animation: radarRotate 3s linear infinite;
+            transform-origin: center;
+            pointer-events: none;
+        }
+
+        /* Status List */
+        .status-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(0, 240, 255, 0.05);
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .status-item:hover {
+            background: rgba(0, 240, 255, 0.05);
+            border-color: rgba(0, 240, 255, 0.15);
+        }
+
+        .status-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 1px;
+            font-family: var(--font-cyber);
+            text-transform: uppercase;
+        }
+
+        .status-value {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 5px rgba(0, 255, 204, 0.3);
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Status khusus offline/warning */
+        .status-value.offline {
+            color: var(--neon-pink);
+            text-shadow: 0 0 5px rgba(255, 0, 127, 0.3);
+            animation: blinkText 1.5s infinite;
+        }
+
+        .status-value.waiting {
+            color: #ffcc00;
+            text-shadow: 0 0 5px rgba(255, 204, 0, 0.3);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: currentColor;
+            display: inline-block;
+        }
+
+        /* Dekorasi Tambahan di Panel Informasi */
+        .system-log-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 120px;
+        }
+
+        .log-title {
+            font-family: var(--font-cyber);
+            font-size: 0.8rem;
+            color: var(--neon-purple);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .log-box {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(189, 0, 255, 0.15);
+            border-radius: 6px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            overflow-y: auto;
+            line-height: 1.4;
+        }
+
+        .log-line {
+            margin-bottom: 4px;
+            border-left: 2px solid var(--neon-purple);
+            padding-left: 6px;
+        }
+
+        .log-line.cyan {
+            border-left-color: var(--neon-cyan);
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--glass-border);
+            padding: 5px 20px;
+            background: linear-gradient(0deg, rgba(0,240,255,0.05) 0%, transparent 100%);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 1px;
+            backdrop-filter: blur(10px);
+        }
+
+        .footer-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--neon-cyan);
+            font-family: var(--font-cyber);
+            animation: blinkText 2.5s infinite;
+        }
+
+        /* --- LOADING OVERLAY --- */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 4, 12, 0.9);
+            z-index: 99;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            pointer-events: none;
             transition: opacity 0.5s ease;
         }
 
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(0, 240, 255, 0.1);
-            border-left-color: var(--secondary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        /* Aktifkan loading saat class 'active' dipasang */
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
         }
 
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes jitter {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            100% { transform: translate(-1px, -1px) rotate(0.5deg); }
+        /* Spinner Futuristik */
+        .cyber-spinner {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .spinner-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 4px solid transparent;
+            border-radius: 50%;
+            animation: radarRotate 1s linear infinite;
+        }
+
+        .spinner-ring-1 {
+            border-top-color: var(--neon-blue);
+            animation-duration: 1.5s;
+        }
+
+        .spinner-ring-2 {
+            border-bottom-color: var(--neon-purple);
+            width: 60px;
+            height: 60px;
+            top: 10px;
+            left: 10px;
+            animation-direction: reverse;
+            animation-duration: 1s;
+        }
+
+        .spinner-ring-3 {
+            border-left-color: var(--neon-cyan);
+            width: 40px;
+            height: 40px;
+            top: 20px;
+            left: 20px;
+            animation-duration: 0.75s;
+        }
+
+        .loading-text {
+            font-family: var(--font-cyber);
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            animation: blinkText 1.5s infinite;
+        }
+
+        /* Progress Bar */
+        .progress-bar-container {
+            width: 250px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 45%; /* Sifat dinamis, dihubungkan lewat JS */
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-cyan));
+            box-shadow: 0 0 10px var(--neon-blue);
+            animation: progressPulse 2s infinite ease-in-out;
+        }
+
+        /* --- ANIMASI CSS --- */
+        @keyframes gridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 1000px; }
+        }
+
+        @keyframes particleFloat {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 50% 100%; }
+        }
+
+        @keyframes radarRotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes scanMove {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes blinkText {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        @keyframes hudPulse {
+            0% { transform: scale(1); opacity: 0.7; }
+            100% { transform: scale(1.05); opacity: 1; box-shadow: 0 0 10px rgba(0, 240, 255, 0.2); }
+        }
+
+        @keyframes screenFlicker {
+            0% { opacity: 0.96; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes glitchText {
+            0%, 100% { transform: skew(0deg); }
+            20% { transform: skew(0.5deg); }
+            21% { transform: skew(-0.5deg); }
+            40% { transform: skew(0deg); }
+            41% { transform: skew(1deg); }
+            42% { transform: skew(0deg); }
+        }
+
+        @keyframes progressPulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        /* --- RESPONSIVENESS (BREAKPOINTS) --- */
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto;
+                overflow-y: auto;
+            }
+            .right-panel {
+                max-height: none;
+            }
+            .main-interface {
+                grid-template-rows: auto 1fr auto;
+                overflow-y: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-title-container h1 {
+                font-size: 1.4rem;
+                letter-spacing: 2px;
+            }
+            .controls-row {
+                flex-wrap: wrap;
+            }
+            .btn-cyber {
+                flex: 1 1 calc(50% - 10px);
+                max-width: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .btn-cyber {
+                flex: 1 1 100%;
+            }
+            footer {
+                flex-direction: column;
+                gap: 5px;
+                text-align: center;
+                padding: 10px;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="bg-container">
-        <div class="twilight-glow"></div>
-        <div class="nebula-cloud"></div>
+    <!-- Background Animasi Efek Cyber -->
+    <div class="bg-glow-layer">
+        <div class="ambient-particles"></div>
     </div>
 
-    <div class="app-container">
+    <!-- Sistem Layout Utama HUD -->
+    <div class="main-interface">
+        
+        <!-- HEADER -->
         <header>
-            <h1>ANIME <span class="neon-text">CYBER AI</span></h1>
-            <p>Blink-Controlled Dual Tracking Interface</p>
+            <div class="header-title-container">
+                <h1 id="header-main-title">CYBER AI VISION</h1>
+                <p>MediaPipe Computer Vision Interface</p>
+            </div>
+            <!-- Status Indikator di Header -->
+            <div style="font-family: var(--font-cyber); font-size: 0.8rem; color: var(--neon-cyan); text-align: right;">
+                SYS_LOC: <span style="color:#ffffff;">X-82 // LATENCY: 0ms</span>
+            </div>
         </header>
 
-        <main class="visualizer-area">
-            <div class="viewport-wrapper" id="viewportWrapper">
-                <video id="webcam" autoplay playsinline muted></video>
-                <canvas id="overlayCanvas"></canvas>
-                <div id="htmlOverlayContainer"></div>
-                <div id="hudNotification" class="hud-notification">FILTER: NORMAL VISION</div>
+        <!-- DASHBOARD GRID -->
+        <div class="dashboard-grid">
+            
+            <!-- VIEWPORT SECTION (KIRI) -->
+            <div class="viewport-section">
                 
-                <div class="loading-overlay" id="loadingIndicator" style="display: none;">
-                    <div class="spinner"></div>
-                    <p>Mempersiapkan Core Tracking & Filter System...</p>
+                <!-- CONTAINER KAMERA -->
+                <div class="camera-container" id="camera-viewport">
+                    
+                    <!-- HUD Siku Samping -->
+                    <div class="corner-hud top-left"></div>
+                    <div class="corner-hud top-right"></div>
+                    <div class="corner-hud bottom-left"></div>
+                    <div class="corner-hud bottom-right"></div>
+
+                    <!-- Efek Scan Line, Vignette, Screen Flicker -->
+                    <div class="scan-line"></div>
+                    <div class="vignette-noise"></div>
+                    <div class="ambient-flicker"></div>
+
+                    <!-- Placeholder Saat Kamera Offline -->
+                    <div class="camera-placeholder" id="camera-off-placeholder">
+                        <div class="camera-placeholder-icon">📷</div>
+                        <span>Camera Feed Offline</span>
+                    </div>
+
+                    <!-- Element Video Input (Diakses oleh JS MediaPipe nanti) -->
+                    <video id="video" autoplay playsinline style="display: none;"></video>
+                    
+                    <!-- Element Canvas Output untuk Menggambar Landmark MediaPipe -->
+                    <canvas id="canvas"></canvas>
                 </div>
+
+                <!-- TOMBOL PENGENDALI -->
+                <div class="controls-row">
+                    <button id="btn-start" class="btn-cyber">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        Aktifkan Kamera
+                    </button>
+                    <button id="btn-stop" class="btn-cyber danger">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect></svg>
+                        Nonaktifkan
+                    </button>
+                    <button id="btn-reset" class="btn-cyber danger">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                        Reset
+                    </button>
+                    <button id="btn-fullscreen" class="btn-cyber">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                        Fullscreen
+                    </button>
+                </div>
+
             </div>
 
-            <div class="control-panel">
-                <button id="btnCamera" class="btn-primary">AKTIFKAN KAMERA</button>
-                <div class="status-box">
-                    <div>FPS: <span id="fpsVal" class="neon-green">0</span></div>
-                    <div>EAR: <span id="earVal" class="neon-green">0.00</span></div>
-                    <div>Filter: <span id="filterVal" class="neon-blue">Normal</span></div>
+            <!-- PANEL INFORMASI (KANAN) -->
+            <div class="right-panel">
+                
+                <!-- Panel Header dengan Mini Radar -->
+                <div class="panel-header">
+                    <div>
+                        <h2>SYSTEM STATUS</h2>
+                        <span style="font-size:0.75rem; color: rgba(255,255,255,0.5); letter-spacing: 1px;">DIAGNOSTIC TELEMETRY</span>
+                    </div>
+                    <!-- Mini Radar Futuristik -->
+                    <div class="radar-container">
+                        <div class="radar-crosshair-h"></div>
+                        <div class="radar-crosshair-v"></div>
+                        <div class="radar-circle radar-circle-1"></div>
+                        <div class="radar-circle radar-circle-2"></div>
+                        <div class="radar-sweep"></div>
+                    </div>
                 </div>
+
+                <!-- Status Items List -->
+                <div class="status-list">
+                    
+                    <div class="status-item">
+                        <span class="status-label">Camera</span>
+                        <span class="status-value offline" id="status-camera">
+                            <span class="status-dot"></span>OFFLINE
+                        </span>
+                    </div>
+
+                    <div class="status-item">
+                        <span class="status-label">Face Detection</span>
+                        <span class="status-value waiting" id="status-face">
+                            <span class="status-dot"></span>Waiting...
+                        </span>
+                    </div>
+
+                    <div class="status-item">
+                        <span class="status-label">Hand Detection</span>
+                        <span class="status-value waiting" id="status-hand">
+                            <span class="status-dot"></span>Waiting...
+                        </span>
+                    </div>
+
+                    <div class="status-item">
+                        <span class="status-label">Pose Detection</span>
+                        <span class="status-value waiting" id="status-pose">
+                            <span class="status-dot"></span>Waiting...
+                        </span>
+                    </div>
+
+                    <div class="status-item">
+                        <span class="status-label">Gesture</span>
+                        <span class="status-value" id="status-gesture" style="color: var(--neon-blue);">
+                            None
+                        </span>
+                    </div>
+
+                    <div class="status-item">
+                        <span class="status-label">FPS</span>
+                        <span class="status-value" id="status-fps" style="color: var(--neon-cyan);">
+                            0
+                        </span>
+                    </div>
+
+                    <div class="status-item">
+                        <span class="status-label">Resolution</span>
+                        <span class="status-value" id="status-resolution">
+                            0 x 0
+                        </span>
+                    </div>
+
+                    <div class="status-item">
+                        <span class="status-label">Tracking</span>
+                        <span class="status-value offline" id="status-tracking">
+                            Inactive
+                        </span>
+                    </div>
+
+                </div>
+
+                <!-- Blok Tambahan: Sistem Log / Konsol Data AI -->
+                <div class="system-log-container">
+                    <span class="log-title">REALTIME CORE LOGGER</span>
+                    <div class="log-box" id="system-log-box">
+                        <div class="log-line">[SYSTEM] READY - Waiting for user interaction.</div>
+                        <div class="log-line cyan">[CONNECT] Core UI initialization complete.</div>
+                        <div class="log-line">[READY] IDLE - Standby mode active.</div>
+                    </div>
+                </div>
+
             </div>
-        </main>
+
+        </div>
+
+        <!-- FOOTER -->
+        <footer>
+            <div>SECURE CORE // MODEL_REV: 2.5-F</div>
+            <div class="footer-status">
+                <span class="status-dot"></span>SYSTEM READY // AI INITIALIZATION COMPLETE
+            </div>
+        </footer>
+
     </div>
 
-    <script>
-        const videoElement = document.getElementById('webcam');
-        const canvasElement = document.getElementById('overlayCanvas');
-        const canvasCtx = canvasElement.getContext('2d');
-        const btnCamera = document.getElementById('btnCamera');
-        const loadingIndicator = document.getElementById('loadingIndicator');
-        const filterVal = document.getElementById('filterVal');
-        const fpsVal = document.getElementById('fpsVal');
-        const earVal = document.getElementById('earVal');
-        const viewportWrapper = document.getElementById('viewportWrapper');
-        const htmlOverlayContainer = document.getElementById('htmlOverlayContainer');
-        const hudNotification = document.getElementById('hudNotification');
+    <!-- LOADING OVERLAY (Dapat diaktifkan nanti menggunakan JS classList.add('active')) -->
+    <div class="loading-overlay" id="ai-loading-overlay">
+        <div class="cyber-spinner">
+            <div class="spinner-ring spinner-ring-1"></div>
+            <div class="spinner-ring spinner-ring-2"></div>
+            <div class="spinner-ring spinner-ring-3"></div>
+        </div>
+        <div class="loading-text">Loading AI Model...</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill"></div>
+        </div>
+        <span style="font-size:0.75rem; color: rgba(0, 240, 255, 0.4); font-family: var(--font-cyber);">DOWNLOADING NEURAL NETWORK CONFIGURATION</span>
+    </div>
 
-        let faceMesh, hands, camera;
-        let particles = [];
-        let sakuraParticles = [];
-        let lastFrameTime = performance.now();
-        let frameCount = 0;
-        let fps = 0;
-
-        // State parameters & Cooldowns
-        let eyesClosedStartTime = null;
-        let lastFilterSwitchTime = 0; 
-        const BLINK_DURATION_THRESHOLD = 80;  // Diturunkan sedikit ke 80ms agar lebih responsif
-        const COOLDOWN_DELAY = 1000;           // Anti-spam tetap 1 detik
-        
-        // --- DIPIKIRKAN ULANG: NILAI AMBANG EAR ---
-        const EAR_THRESHOLD = 0.21;            // Dinaikkan dari 0.14 ke 0.21 (Sangat efektif untuk mata Asia/sipit)
-
-        const FILTERS = ["NORMAL VISION", "CYBER GREEN", "THERMAL VISION", "NIGHT VISION", "MATRIX MODE"];
-        let currentFilterIndex = 0;
-
-        let currentMode = "Standard";
-        let latestFaceResults = null;
-        let latestHandResults = null;
-
-        function resizeCanvas() {
-            canvasElement.width = viewportWrapper.clientWidth;
-            canvasElement.height = viewportWrapper.clientHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-
-        class Particle {
-            constructor(x, y, type, color, size, vx, vy, life) {
-                this.x = x; this.y = y; this.type = type; this.color = color;
-                this.size = size; this.vx = vx; this.vy = vy;
-                this.maxLife = life; this.life = life;
-                this.angle = Math.random() * Math.PI * 2;
-                this.rotSpeed = (Math.random() - 0.5) * 0.1;
-            }
-            update() {
-                this.x += this.vx; this.y += this.vy; this.life--; this.angle += this.rotSpeed;
-                if(this.type === 'sakura') { this.x += Math.sin(this.life * 0.02) * 0.5; }
-            }
-        }
-
-        function emitGlobalSakura() {
-            if (sakuraParticles.length < 35) {
-                sakuraParticles.push(new Particle(
-                    Math.random() * canvasElement.width, -10, 'sakura',
-                    'rgba(255, 183, 197, 0.75)', Math.random() * 5 + 3,
-                    (Math.random() - 0.2) * 1.5, Math.random() * 1 + 1, 300
-                ));
-            }
-        }
-
-        function getDistance(p1, p2) {
-            return Math.hypot(p1.x - p2.x, p1.y - p2.y, p1.z - p2.z);
-        }
-
-        function triggerHUDNotification(text) {
-            hudNotification.innerText = `FILTER: ${text}`;
-            hudNotification.classList.add('active');
-            setTimeout(() => {
-                hudNotification.classList.remove('active');
-            }, 1200);
-        }
-
-        function processAndRender() {
-            const now = performance.now();
-            frameCount++;
-            if (now - lastFrameTime >= 1000) {
-                fps = frameCount; frameCount = 0; lastFrameTime = now;
-                fpsVal.innerText = fps;
-            }
-
-            const W = canvasElement.width;
-            const H = canvasElement.height;
-
-            applyBaseCameraFilters(W, H);
-
-            emitGlobalSakura();
-            sakuraParticles = sakuraParticles.filter(p => p.life > 0);
-            sakuraParticles.forEach(p => {
-                p.update();
-                canvasCtx.save();
-                canvasCtx.translate(p.x, p.y);
-                canvasCtx.rotate(p.angle);
-                canvasCtx.fillStyle = p.color;
-                canvasCtx.beginPath();
-                canvasCtx.ellipse(0, 0, p.size, p.size / 2, 0, 0, Math.PI * 2);
-                canvasCtx.fill();
-                canvasCtx.restore();
-            });
-
-            htmlOverlayContainer.innerHTML = '';
-            viewportWrapper.style.transform = 'scale(1)';
-            
-            applyCSSViewTransitions();
-
-            // ==========================================
-            // FACE TRACKING INTERACTION DATA EVALUATOR
-            // ==========================================
-            if (latestFaceResults && latestFaceResults.multiFaceLandmarks && latestFaceResults.multiFaceLandmarks.length > 0) {
-                const landmarks = latestFaceResults.multiFaceLandmarks[0];
-
-                const leftEye = landmarks[33], rightEye = landmarks[263];
-                const noseTip = landmarks[4], chin = landmarks[152], forehead = landmarks[10];
-
-                const faceWidth = getDistance(leftEye, rightEye) * W;
-                const scaleFactor = faceWidth / 110; 
-                const centerPoint = { x: noseTip.x * W, y: noseTip.y * H };
-                const rollAngle = Math.atan2((rightEye.y - leftEye.y) * H, (rightEye.x - leftEye.x) * W);
-                
-                const totalFaceHeight = getDistance(forehead, chin);
-                const noseToChin = getDistance(noseTip, chin);
-                const pitchRatio = noseToChin / totalFaceHeight; 
-
-                const lipTop = landmarks[13], lipBottom = landmarks[14];
-                const mouthLeft = landmarks[61], mouthRight = landmarks[291];
-                const mouthOpenRatio = getDistance(lipTop, lipBottom) / getDistance(mouthLeft, mouthRight);
-                const smileRatio = getDistance(mouthLeft, mouthRight) / (getDistance(landmarks[50], landmarks[280]));
-
-                // Hitung EAR Secara Akurat Menggunakan Landmark Kelopak Mata Atas & Bawah
-                const leftEAR = getDistance(landmarks[159], landmarks[145]) / getDistance(landmarks[33], landmarks[133]);
-                const rightEAR = getDistance(landmarks[386], landmarks[374]) / getDistance(landmarks[263], landmarks[362]);
-                const averageEAR = (leftEAR + rightEAR) / 2;
-                
-                // Print Real-time EAR ke HUD Status Box untuk debug
-                earVal.innerText = averageEAR.toFixed(2);
-
-                // --- ALGORITMA UTAMA SWITCH FILTER KEDIPAN ---
-                if (averageEAR <= EAR_THRESHOLD) { 
-                    if (!eyesClosedStartTime) {
-                        eyesClosedStartTime = now;
-                    }
-                } else {
-                    if (eyesClosedStartTime) {
-                        const closedDuration = now - eyesClosedStartTime;
-                        
-                        if (closedDuration >= BLINK_DURATION_THRESHOLD && (now - lastFilterSwitchTime > COOLDOWN_DELAY)) {
-                            currentFilterIndex = (currentFilterIndex + 1) % FILTERS.length;
-                            lastFilterSwitchTime = now;
-                            
-                            filterVal.innerText = FILTERS[currentFilterIndex];
-                            triggerHUDNotification(FILTERS[currentFilterIndex]);
-                        }
-                        eyesClosedStartTime = null;
-                    }
-                }
-
-                // Expression Mode Calculations
-                let detectedMode = "Standard";
-                if (averageEAR < EAR_THRESHOLD) {
-                    detectedMode = "Sleep";
-                } else {
-                    if (mouthOpenRatio > 0.6 && pitchRatio < 0.55) detectedMode = "Power Up";
-                    else if (mouthOpenRatio > 0.4) detectedMode = "Surprise";
-                    else if (pitchRatio > 0.62) detectedMode = "Embarrassed";
-                    else if (smileRatio > 1.15) detectedMode = "Happy";
-                }
-
-                currentMode = detectedMode;
-
-                // Blush Rendering Layer
-                if (smileRatio > 0.85 || currentMode === "Embarrassed") {
-                    let intensity = Math.min((smileRatio - 0.85) * 2.5, 0.8);
-                    if (currentMode === "Embarrassed") intensity = 0.9;
-                    canvasCtx.save();
-                    canvasCtx.translate(centerPoint.x, centerPoint.y);
-                    canvasCtx.rotate(rollAngle);
-                    canvasCtx.shadowBlur = 20 * scaleFactor;
-                    canvasCtx.shadowColor = `rgba(255, 60, 140, ${intensity})`;
-                    canvasCtx.fillStyle = `rgba(255, 105, 180, ${intensity * 0.5})`;
-                    canvasCtx.beginPath();
-                    canvasCtx.arc(-35 * scaleFactor, 20 * scaleFactor, 18 * scaleFactor, 0, Math.PI * 2);
-                    canvasCtx.arc(35 * scaleFactor, 20 * scaleFactor, 18 * scaleFactor, 0, Math.PI * 2);
-                    canvasCtx.fill();
-                    canvasCtx.restore();
-                }
-
-                // Sparkle Eye Cross Layer (Hanya muncul jika mata terbuka)
-                if (averageEAR > EAR_THRESHOLD) {
-                    [leftEye, rightEye].forEach(eye => {
-                        canvasCtx.save();
-                        canvasCtx.translate(eye.x * W, eye.y * H);
-                        canvasCtx.rotate(rollAngle + (now * 0.003));
-                        canvasCtx.shadowBlur = 15;
-                        canvasCtx.shadowColor = "#00f0ff";
-                        canvasCtx.fillStyle = "#ffffff";
-                        for (let i = 0; i < 2; i++) {
-                            canvasCtx.rotate(Math.PI / 4 * i);
-                            canvasCtx.fillRect(-10 * scaleFactor, -2 * scaleFactor, 20 * scaleFactor, 4 * scaleFactor);
-                            canvasCtx.fillRect(-2 * scaleFactor, -10 * scaleFactor, 4 * scaleFactor, 20 * scaleFactor);
-                        }
-                        canvasCtx.restore();
-                    });
-                }
-
-                if (currentMode === "Surprise") {
-                    viewportWrapper.style.transform = "scale(1.04)";
-                    const lines = document.createElement('div');
-                    lines.className = 'shock-lines';
-                    htmlOverlayContainer.appendChild(lines);
-                }
-            }
-
-            // ==========================================
-            // HAND TRACKING INTERACTION LAYER
-            // ==========================================
-            if (latestHandResults && latestHandResults.multiHandLandmarks) {
-                latestHandResults.multiHandLandmarks.forEach((handLandmarks) => {
-                    canvasCtx.save();
-                    canvasCtx.lineWidth = 3;
-                    canvasCtx.strokeStyle = currentFilterIndex === 2 ? 'rgba(255,255,255,0.7)' : 'rgba(0, 240, 255, 0.6)';
-                    canvasCtx.shadowBlur = 10;
-                    canvasCtx.shadowColor = '#00f0ff';
-
-                    const connections = [
-                        [0, 1, 2, 3, 4], [0, 5, 6, 7, 8], [5, 9, 13, 17],
-                        [0, 17, 18, 19, 20], [9, 10, 11, 12], [13, 14, 15, 16]
-                    ];
-
-                    connections.forEach(path => {
-                        canvasCtx.beginPath();
-                        path.forEach((index, i) => {
-                            const pt = handLandmarks[index];
-                            if (i === 0) canvasCtx.moveTo(pt.x * W, pt.y * H);
-                            else canvasCtx.lineTo(pt.x * W, pt.y * H);
-                        });
-                        canvasCtx.stroke();
-                    });
-
-                    [4, 8, 12, 16, 20].forEach(index => {
-                        const tip = handLandmarks[index];
-                        canvasCtx.fillStyle = 'rgba(0, 255, 102, 0.8)';
-                        canvasCtx.beginPath();
-                        canvasCtx.arc(tip.x * W, tip.y * H, 5, 0, Math.PI * 2);
-                        canvasCtx.fill();
-                    });
-                    canvasCtx.restore();
-                });
-            }
-
-            requestAnimationFrame(processAndRender);
-        }
-
-        function applyBaseCameraFilters(W, H) {
-            canvasCtx.drawImage(videoElement, 0, 0, W, H);
-            if (currentFilterIndex === 0) return;
-
-            let imgData = canvasCtx.getImageData(0, 0, W, H);
-            let data = imgData.data;
-
-            if (currentFilterIndex === 2) { 
-                for (let i = 0; i < data.length; i += 4) {
-                    let r = data[i], g = data[i+1], b = data[i+2];
-                    let v = (r + g + b) / 3;
-                    data[i]   = v > 128 ? 255 : v * 2;
-                    data[i+1] = v > 64 && v < 192 ? 200 : (v > 192 ? v : 0);
-                    data[i+2] = v < 128 ? 255 - (v * 2) : 0;
-                }
-                canvasCtx.putImageData(imgData, 0, 0);
-            } 
-            else if (currentFilterIndex === 4) { 
-                for (let i = 0; i < data.length; i += 4) {
-                    let r = data[i], g = data[i+1], b = data[i+2];
-                    let lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-                    data[i] = lum * 0.1;
-                    data[i+1] = lum * 1.4;
-                    data[i+2] = lum * 0.1;
-                }
-                canvasCtx.putImageData(imgData, 0, 0);
-
-                if (Math.random() < 0.15) {
-                    let sliceY = Math.random() * H;
-                    let sliceH = Math.random() * 25 + 5;
-                    canvasCtx.drawImage(canvasElement, 0, sliceY, W, sliceH, (Math.random() - 0.5) * 12, sliceY, W, sliceH);
-                }
-            }
-        }
-
-        function applyCSSViewTransitions() {
-            switch(currentFilterIndex) {
-                case 1:
-                    canvasElement.style.filter = "contrast(1.2) brightness(0.9) hue-rotate(40deg) sepia(0.6) saturate(1.8)";
-                    canvasCtx.save();
-                    canvasCtx.strokeStyle = 'rgba(0, 255, 102, 0.25)';
-                    canvasCtx.lineWidth = 1;
-                    for (let y = 0; y < canvasElement.height; y += 4) {
-                        canvasCtx.beginPath(); canvasCtx.moveTo(0, y); canvasCtx.lineTo(canvasElement.width, y); canvasCtx.stroke();
-                    }
-                    canvasCtx.strokeStyle = 'rgba(0, 255, 102, 0.4)';
-                    canvasCtx.beginPath(); canvasCtx.arc(canvasElement.width/2, canvasElement.height/2, 60, 0, Math.PI*2); canvasCtx.stroke();
-                    canvasCtx.restore();
-                    break;
-                case 2:
-                    canvasElement.style.filter = "contrast(1.6) saturate(2.5)";
-                    break;
-                case 3:
-                    canvasElement.style.filter = "brightness(1.5) contrast(1.1) sepia(1) hue-rotate(85deg) saturate(1.5)";
-                    canvasCtx.save();
-                    canvasCtx.fillStyle = "rgba(0, 255, 0, 0.05)";
-                    for (let k = 0; k < 12; k++) {
-                        canvasCtx.fillRect(Math.random() * canvasElement.width, Math.random() * canvasElement.height, 3, 3);
-                    }
-                    canvasCtx.restore();
-                    break;
-                case 4:
-                    canvasElement.style.filter = "contrast(1.5) brightness(0.85)";
-                    break;
-                default:
-                    canvasElement.style.filter = "none";
-                    break;
-            }
-        }
-
-        function initAIModel() {
-            faceMesh = new FaceMesh({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-            });
-            faceMesh.setOptions({
-                maxNumFaces: 1,
-                refineLandmarks: true,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.5
-            });
-            faceMesh.onResults((res) => { latestFaceResults = res; });
-
-            hands = new Hands({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-            });
-            hands.setOptions({
-                maxNumHands: 2,
-                modelComplexity: 1,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.5
-            });
-            hands.onResults((res) => { latestHandResults = res; });
-
-            loadingIndicator.style.opacity = '0';
-            setTimeout(() => { loadingIndicator.style.display = 'none'; }, 500);
-        }
-
-        async function startCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: 640, height: 480, facingMode: "user" },
-                    audio: false
-                });
-                videoElement.srcObject = stream;
-                
-                camera = new Camera(videoElement, {
-                    onFrame: async () => {
-                        await Promise.all([
-                            faceMesh.send({ image: videoElement }),
-                            hands.send({ image: videoElement })
-                        ]);
-                    },
-                    width: 640,
-                    height: 480
-                });
-                
-                camera.start();
-                btnCamera.style.display = 'none';
-                resizeCanvas();
-                requestAnimationFrame(processAndRender);
-            } catch (err) {
-                alert("Gagal mengakses hardware kamera: " + err.message);
-                loadingIndicator.style.display = 'none';
-            }
-        }
-
-        btnCamera.addEventListener('click', () => {
-            loadingIndicator.style.display = 'flex';
-            initAIModel();
-            startCamera();
-        });
-    </script>
 </body>
 </html>
